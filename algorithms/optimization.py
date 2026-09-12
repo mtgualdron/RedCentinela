@@ -15,8 +15,8 @@ def configuration_score(
     - Use problem.score_components(configuration); ya retorna cobertura,
       redundancia y exposición en ese orden.
     """
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 1: implemente configuration_score")
+    cobertura, redundancia, exposicion = problem.score_components(configuration)
+    return cobertura-redundancia-exposicion 
 
 
 def hill_climbing(
@@ -48,8 +48,7 @@ def cooling_schedule(initial_temperature: float, cooling_rate: float, iteration:
 
     Esta función se invoca desde simulated_annealing en cada iteración.
     """
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 2: implemente cooling_schedule")
+    return initial_temperature * (cooling_rate**iteration)
 
 
 def simulated_annealing(
@@ -77,10 +76,59 @@ def simulated_annealing(
     - Detenga la ejecución cuando la temperatura alcance minimum_temperature.
     """
     rng = rng or random.Random()
+    evaluations = 0
     minimum_temperature = 1e-9
+    mejor = initial_configuration
+    score_mejor = configuration_score(problem, mejor)
+    evaluations += 1
+    current = initial_configuration
+    score_actual = configuration_score(problem, current)
+    evaluations += 1
+    history = []
+    score_history =[]
+    
+    for i in range (max_iterations):
+        temperatura = cooling_schedule(initial_temperature,cooling_rate,i)
+        if temperatura < minimum_temperature:
+            break
 
-    # TODO: Add your code here
-    raise NotImplementedError("Punto 2: implemente simulated_annealing")
+        vecinos = problem.neighbors(current) #vecinos de x estado 
+        vecino = rng.choice(vecinos)
+        score_vecino = configuration_score(problem, vecino)
+        evaluations+= 1
+        delta = score_vecino - score_actual
+        if delta > 0: #si vecino es mejor a current actualizar current
+            current = vecino
+            score_actual = score_vecino
+            if score_actual > score_mejor:  #si vecino es mejor que "mejor" actualiza mejor
+                mejor = vecino
+                score_mejor = configuration_score(problem, mejor) #cambia mejor y su score
+                evaluations +=1
+        else:
+            probabilidad = math.exp(delta/temperatura)
+            sorteo = rng.random()
+            if probabilidad > sorteo: 
+                current = vecino
+                score_actual= score_vecino
+                if score_actual > score_mejor:  #si vecino es mejor que "mejor" actualiza mejor
+                    mejor = vecino
+                    score_mejor = configuration_score(problem, mejor) #cambia mejor y su score
+                    evaluations +=1
+        history.append(current)
+        score_history.append(score_actual)
+    return OptimizationResult(
+    best_configuration=mejor,
+    best_score=score_mejor,
+    evaluations=evaluations,
+    iterations=i + 1,
+    history=history,
+    score_history=score_history,
+)
+                
+                    
+        
+            
+    
 
 
 def one_point_crossover(
