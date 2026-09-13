@@ -2,6 +2,7 @@ from abc import ABC, abstractmethod
 
 from algorithms.evaluation import evaluation_function
 from world.game_state import GameState
+import math
 
 
 class MultiAgentSearchAgent(ABC):
@@ -61,5 +62,51 @@ class AlphaBetaAgent(MultiAgentSearchAgent):
         - En MAX actualice alpha y corte si valor >= beta; en MIN actualice beta
           y corte si valor <= alpha.
         """
-        # TODO: Add your code here
-        raise NotImplementedError("Punto 5: implemente AlphaBetaAgent.get_action")
+        self.nodes_evaluated = 0
+        self.nodes_evaluated +=1
+        alpha = -math.inf
+        beta = math.inf
+        mejor_valor = -math.inf
+        mejor_accion = None
+
+        for accion in state.get_legal_actions(0):
+          sucesor = state.generate_successor(0, accion)
+          valor = self._valor(sucesor, 1, 1, alpha, beta)
+          if valor > mejor_valor:
+              mejor_valor = valor
+              mejor_accion = accion
+              alpha = max(alpha, mejor_valor)
+              
+
+        return mejor_accion
+    
+    def _valor(self,state:GameState,agente,profundidad,alpha,beta):
+      self.nodes_evaluated+=1
+      if state.is_win() or state.is_lose():
+        return evaluation_function(state)
+      if profundidad == self.depth:
+        return evaluation_function(state)
+      acciones = state.get_legal_actions(agente)
+      siguiente = (agente + 1) % state.get_num_agents()
+      if agente == 0:   # MAX
+        mejor_valor = -math.inf
+        for accion in acciones:
+            sucesor = state.generate_successor(agente, accion)
+            v = self._valor(sucesor, siguiente, profundidad + 1, alpha, beta)
+            mejor_valor = max(mejor_valor, v)
+            alpha = max(alpha, mejor_valor)
+            if mejor_valor >= beta:
+                break
+        return mejor_valor
+      else: 
+        mejor_valor = math.inf
+        for accion in acciones:
+            sucesor = state.generate_successor(agente, accion)
+            v = self._valor(sucesor, siguiente, profundidad + 1, alpha, beta)
+            mejor_valor = min(mejor_valor, v)
+            beta = min(beta, mejor_valor)
+            if mejor_valor <= alpha:
+                break
+        return mejor_valor
+        
+      

@@ -35,8 +35,36 @@ def evaluation_function(state: GameState) -> float:
     - Maneje conjuntos vacíos y distancias infinitas, y mantenga todo estado no
       terminal estrictamente entre -1000 y +1000.
     """
+    PESO_1 = 50.0
+    PESO_2 = 50.0
+    PESO_3 = 20.0
+    PESO_4 = 10.0
+    PESO_5 = 100.0
+    DIVISOR_SCORE = 50.0
     if state.is_win() or state.is_lose():
         return base_evaluation_function(state)
 
-    # TODO: Add your code here
-    return base_evaluation_function(state)
+    distancias = []
+    for terminal in state.pending_terminals:
+        distancias.append( state.layout.distance(state.defender_position, terminal) )
+    distancia_terminal = min(distancias)
+    cercania_terminal = 1 / (1 + distancia_terminal) 
+
+    distancia_intruso = state.layout.distance(state.intruder_position, state.defender_position)
+    cercania_intruso = 1 / (1 + distancia_intruso)    
+
+    
+    cantidad_pendientes = len(state.pending_terminals)
+
+    movilidad = len(state.get_legal_actions(0))
+
+    score = state.get_score()
+    score_acotado = math.tanh(score / DIVISOR_SCORE)  
+    valor = 0.0
+    valor += PESO_1 * cercania_terminal        # más cerca de terminal = mejor -> suma
+    valor -= PESO_2 * cercania_intruso         # más cerca del intruso = peor -> resta
+    valor -= PESO_3 * cantidad_pendientes      # más pendientes = peor -> resta
+    valor += PESO_4 * movilidad                # más movilidad = mejor -> suma
+    valor += PESO_5 * score_acotado            # score alto = mejor -> suma
+
+    return valor
