@@ -181,7 +181,11 @@ def one_point_crossover(
     if len(parent1) < 2:
         return parent1, parent2
 
-    # TODO: Add your code here
+    cut = rng.randint(1,len(parent1)-1)
+    child1 = parent1[:cut] + parent2[cut:]
+    child2 = parent2[:cut] + parent1[cut:]
+    return child1, child2
+  
     raise NotImplementedError("Punto 3: implemente one_point_crossover")
 
 
@@ -201,7 +205,21 @@ def swap_mutation(
     - Si alguno de los dos grupos está vacío, no hay un intercambio posible.
     - Retorne una tupla nueva; no modifique el individuo recibido.
     """
-    # TODO: Add your code here
+    if rng.random() >= mutation_probability:
+        return individual
+
+    active = [index for index, bit in enumerate(individual) if bit]
+    inactive = [index for index, bit in enumerate(individual) if not bit]
+    if not active or not inactive:
+        return individual
+
+    on_index = rng.choice(active)
+    off_index = rng.choice(inactive)
+
+    mutated = list(individual)
+    mutated[on_index] = 0
+    mutated[off_index] = 1
+    return tuple(mutated)
     raise NotImplementedError("Punto 3: implemente swap_mutation")
 
 
@@ -237,6 +255,54 @@ def genetic_algorithm(
         raise ValueError("La probabilidad de mutación debe estar entre 0 y 1")
     if not 0 <= elite_size <= population_size:
         raise ValueError("elite_size debe estar entre 0 y population_size")
+    
+    population = problem.initial_population(population_size, rng)
+    scores = [configuration_score(problem, individual) for individual in population]
+    evaluations = len(population)
 
-    # TODO: Add your code here
+    best_index = max(range(len(population)), key=lambda i: scores[i])
+    best = population[best_index]
+    best_score = scores[best_index]
+
+    history = [best]
+    score_history = [best_score]
+
+    for _ in range(generations):
+        ranked = sorted(range(len(population)), key=lambda i: scores[i], reverse=True)
+        new_population = [population[i] for i in ranked[:elite_size]]
+
+        while len(new_population) < population_size:
+            parent1 = problem.tournament_select(population, scores, rng)
+            parent2 = problem.tournament_select(population, scores, rng)
+            child1, child2 = one_point_crossover(parent1, parent2, rng)
+
+            child1 = problem.repair_configuration(child1, rng)
+            child1 = swap_mutation(child1, mutation_probability, rng)
+            new_population.append(child1)
+
+            if len(new_population) < population_size:
+                child2 = problem.repair_configuration(child2, rng)
+                child2 = swap_mutation(child2, mutation_probability, rng)
+                new_population.append(child2)
+
+        population = new_population
+        scores = [configuration_score(problem, individual) for individual in population]
+        evaluations += len(population)
+
+        generation_best_index = max(range(len(population)), key=lambda i: scores[i])
+        if scores[generation_best_index] > best_score:
+            best = population[generation_best_index]
+            best_score = scores[generation_best_index]
+
+        history.append(best)
+        score_history.append(best_score)
+
+    return OptimizationResult(
+        best_configuration=best,
+        best_score=best_score,
+        evaluations=evaluations,
+        iterations=generations,
+        history=history,
+        score_history=score_history,
+    )
     raise NotImplementedError("Punto 3: implemente genetic_algorithm")
