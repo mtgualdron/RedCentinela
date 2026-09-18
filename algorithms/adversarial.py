@@ -42,7 +42,44 @@ class MinimaxAgent(MultiAgentSearchAgent):
           la raíz. Retorne la acción de MAX y conserve la primera en los empates.
         """
         # TODO: Add your code here
-        raise NotImplementedError("Punto 4: implemente MinimaxAgent.get_action")
+        self.nodes_evaluated = 0
+        self.nodes_evaluated+=1
+        mejor_valor = -999999999999999999999999999999999
+        mejor_accion = None
+        acciones = state.get_legal_actions(0)
+        for accion in acciones:
+          sucesor = state.generate_successor(0, accion)
+          v = self.valor(sucesor, 1, 1)
+          if v > mejor_valor:
+            mejor_valor = v
+            mejor_accion = accion
+        return mejor_accion
+        
+    def valor(self, state: GameState, agente, profundidad): #funcion aux recursiva que simula las rutas de los sucesores ;)
+      self.nodes_evaluated+=1
+      if state.is_win() or state.is_lose() or profundidad == self.depth:
+        return evaluation_function(state)
+      else:
+        acciones = state.get_legal_actions(agente)
+        if agente == 0:
+          mejor_valor = -99999999999999999999999999999999
+          for accion in acciones:
+            sucesor = state.generate_successor(agente, accion)
+            siguiente = (agente+1)%state.get_num_agents()
+            valor_generado = self.valor(sucesor, siguiente, profundidad+1)
+            mejor_valor = max(mejor_valor, valor_generado)
+          return mejor_valor
+        elif agente == 1:
+          menor_valor = 99999999999999999999999999999999
+          for accion in acciones:
+            sucesor = state.generate_successor(agente, accion)
+            siguiente = (agente+1)%state.get_num_agents()
+            valor_generado = self.valor(sucesor, siguiente, profundidad+1)
+            menor_valor = min(menor_valor, valor_generado)
+          return menor_valor
+        
+      
+      
 
 
 class AlphaBetaAgent(MultiAgentSearchAgent):
